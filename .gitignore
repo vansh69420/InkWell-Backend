@@ -1,0 +1,9 @@
+# Graphify output
+graphify-out/
+
+# GitHub metadata / workflows (if you really want to ignore)
+.github/bin/
+obj/
+appsettings.Development.json
+appsettings.Development.json
+*.Development.json
