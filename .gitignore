@@ -4,6 +4,7 @@ graphify-out/
 # GitHub metadata / workflows (if you really want to ignore)
 .github/bin/
 obj/
+bin/
 appsettings.Development.json
 appsettings.Development.json
 *.Development.json
