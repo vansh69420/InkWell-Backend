@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="../build/InkWell.Media.Service.props" />
+</Project>

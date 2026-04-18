@@ -1,0 +1,35 @@
+{
+  "Jwt": {
+    "Key": "YOUR_SECRET_KEY_HERE",
+    "Issuer": "InkWell",
+    "Audience": "InkWellUsers",
+    "ExpiryMinutes": 1440,
+    "RefreshTokenExpiryDays": 7
+  },
+  "OAuth": {
+    "Google": {
+      "ClientId": "REPLACE_WITH_GOOGLE_CLIENT_ID",
+      "ClientSecret": "REPLACE_WITH_GOOGLE_CLIENT_SECRET",
+      "RedirectUri": "http://localhost:5077/api/auth/oauth/google/callback"
+    },
+    "GitHub": {
+      "ClientId": "REPLACE_WITH_GITHUB_CLIENT_ID",
+      "ClientSecret": "REPLACE_WITH_GITHUB_CLIENT_SECRET",
+      "RedirectUri": "http://localhost:5077/api/auth/oauth/github/callback"
+    }
+  },
+  "ConnectionStrings": {
+    "AuthDb": "REPLACE_WITH_YOUR_CONNECTION_STRING"
+  },
+  "Redis": {
+    "ConnectionString": "REPLACE_WITH_REDIS_CONNECTION_STRING"
+  },
+  "RabbitMq": {
+    "Host": "REPLACE_WITH_RABBITMQ_HOST"
+  },
+  "Frontend": {
+    "Origin": "http://localhost:4200",
+    "SuccessUrl": "http://localhost:4200/",
+    "FailureUrl": "http://localhost:4200/login"
+  }
+}
