@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="../buildMultiTargeting/InkWell.Taxonomy.Service.props" />
+</Project>
