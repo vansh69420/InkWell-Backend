@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "RWilsE73eMc=",
+  "success": true,
+  "projectFilePath": "/Users/phoenix/Downloads/inkwell-backend/src/InkWell.Media.Service/InkWell.Media.Service.csproj",
+  "expectedPackageFiles": [
+    "/Users/phoenix/.nuget/packages/microsoft.aspnetcore.openapi/10.0.1/microsoft.aspnetcore.openapi.10.0.1.nupkg.sha512",
+    "/Users/phoenix/.nuget/packages/microsoft.openapi/2.0.0/microsoft.openapi.2.0.0.nupkg.sha512"
+  ],
+  "logs": []
+}

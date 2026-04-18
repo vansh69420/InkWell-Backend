@@ -1,0 +1,6 @@
+@InkWell.Taxonomy.Service_HostAddress = http://localhost:5160
+
+GET {{InkWell.Taxonomy.Service_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
