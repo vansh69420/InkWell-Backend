@@ -1,0 +1,6 @@
+@InkWell.Post.Service_HostAddress = http://localhost:5103
+
+GET {{InkWell.Post.Service_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
