@@ -1,3 +1,0 @@
-﻿<Project>
-  <Import Project="../build/InkWell.Post.Service.props" />
-</Project>
