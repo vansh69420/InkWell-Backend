@@ -316,7 +316,7 @@ public class AuthController : ControllerBase
         Response.Cookies.Append(name, value, new CookieOptions
         {
             HttpOnly = true,
-            Secure = Request.IsHttps,
+            Secure = false,
             SameSite = SameSiteMode.Lax,
             Path = "/",
             Expires = DateTimeOffset.UtcNow.Add(expiration),
@@ -329,10 +329,19 @@ public class AuthController : ControllerBase
         var accessExpiryMinutes = _configuration.GetValue<int?>("Jwt:ExpiryMinutes") ?? 1440;
         var refreshExpiryDays = _configuration.GetValue<int?>("Jwt:RefreshTokenExpiryDays") ?? 7;
 
+        var cookieOptions = new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = false,
+            SameSite = SameSiteMode.Lax,
+            Path = "/",
+            IsEssential = true
+        };
+
         Response.Cookies.Append(AccessTokenCookie, result.AccessToken, new CookieOptions
         {
             HttpOnly = true,
-            Secure = Request.IsHttps,
+            Secure = false,
             SameSite = SameSiteMode.Lax,
             Path = "/",
             Expires = DateTimeOffset.UtcNow.AddMinutes(accessExpiryMinutes),
@@ -344,7 +353,7 @@ public class AuthController : ControllerBase
             Response.Cookies.Append(RefreshTokenCookie, result.RefreshToken, new CookieOptions
             {
                 HttpOnly = true,
-                Secure = Request.IsHttps,
+                Secure = false,
                 SameSite = SameSiteMode.Lax,
                 Path = "/",
                 Expires = DateTimeOffset.UtcNow.AddDays(refreshExpiryDays),

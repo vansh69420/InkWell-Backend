@@ -4,6 +4,9 @@ using InkWell.Post.Service.Enums;
 using InkWell.Post.Service.Models;
 using InkWell.Post.Service.Repositories;
 using Microsoft.AspNetCore.Http;
+using InkWell.Post.Service.DTOs.Requests;
+using InkWell.Post.Service.External;
+using InkWell.Post.Service.Utilities;
 
 namespace InkWell.Post.Service.Services
 {
@@ -13,15 +16,17 @@ namespace InkWell.Post.Service.Services
 
         private readonly IPostRepository _postRepository;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly ITaxonomyClient _taxonomyClient;
 
         public PostServiceImpl(
             IPostRepository postRepository,
-            IHttpContextAccessor httpContextAccessor)
+            IHttpContextAccessor httpContextAccessor,
+            ITaxonomyClient taxonomyClient)
         {
             _postRepository = postRepository;
             _httpContextAccessor = httpContextAccessor;
+            _taxonomyClient = taxonomyClient;
         }
-
         public async Task<IReadOnlyList<PostSummaryResponse>> GetPublishedPostsAsync()
         {
             var posts = await _postRepository.FindPublishedOrderByPublishedAtDescAsync();
@@ -212,6 +217,245 @@ namespace InkWell.Post.Service.Services
 
             viewedIds.Add(postId);
             session.SetString(ViewedPostsSessionKey, JsonSerializer.Serialize(viewedIds));
+        }
+
+        public async Task<IReadOnlyList<MyPostSummaryResponse>> GetMyPostsAsync(Guid currentUserId)
+        {
+            var posts = await _postRepository.FindMyPostsAsync(currentUserId);
+            return posts.Select(p => new MyPostSummaryResponse
+            {
+                PostId = p.PostId,
+                AuthorId = p.AuthorId,
+                Title = p.Title,
+                Slug = p.Slug,
+                Status = p.Status,
+                ReadTimeMin = p.ReadTimeMin,
+                ViewCount = p.ViewCount,
+                LikesCount = p.LikesCount,
+                CreatedAt = p.CreatedAt,
+                UpdatedAt = p.UpdatedAt,
+                PublishedAt = p.PublishedAt
+            }).ToList();
+        }
+
+        public async Task<PostEditorResponse?> GetPostForEditAsync(Guid currentUserId, bool isAdmin, Guid postId)
+        {
+            var post = await _postRepository.FindByPostIdAsync(postId);
+            if (post == null) return null;
+
+            if (!isAdmin && post.AuthorId != currentUserId)
+                throw new UnauthorizedAccessException("Not allowed.");
+
+            var categoryIds = await _postRepository.GetCategoryIdsByPostIdAsync(post.PostId);
+            var tagIds = await _postRepository.GetTagIdsByPostIdAsync(post.PostId);
+
+            return MapEditor(post, categoryIds, tagIds);
+        }
+
+        public async Task<PostEditorResponse> CreatePostAsync(Guid currentUserId, CreatePostRequest request)
+        {
+            ValidateWriteInput(request.Title, request.Content);
+
+            await ValidateTaxonomyAsync(request.CategoryIds, request.TagIds);
+
+            var baseSlug = SlugGenerator.Generate(request.Title);
+            var slug = await ResolveUniqueSlugAsync(baseSlug, ignorePostId: null);
+
+            var readTime = ReadTimeCalculator.ComputeMinutesFromHtml(request.Content);
+            var excerpt = string.IsNullOrWhiteSpace(request.Excerpt)
+                ? ReadTimeCalculator.BuildExcerptFromHtml(request.Content)
+                : request.Excerpt.Trim();
+
+            var now = DateTime.UtcNow;
+
+            var post = new BlogPost
+            {
+                PostId = Guid.NewGuid(),
+                AuthorId = currentUserId,
+                Title = request.Title.Trim(),
+                Slug = slug,
+                Content = request.Content,
+                Excerpt = excerpt,
+                FeaturedImageUrl = request.FeaturedImageUrl,
+                Status = PostStatus.Draft,
+                ReadTimeMin = readTime,
+                ViewCount = 0,
+                LikesCount = 0,
+                CreatedAt = now,
+                UpdatedAt = now,
+                PublishedAt = null
+            };
+
+            await _postRepository.AddAsync(post);
+
+            await _postRepository.ReplaceCategoriesAsync(post.PostId, request.CategoryIds ?? new());
+            await _postRepository.ReplaceTagsAsync(post.PostId, request.TagIds ?? new());
+
+            await _postRepository.SaveChangesAsync();
+
+            var categoryIds = await _postRepository.GetCategoryIdsByPostIdAsync(post.PostId);
+            var tagIds = await _postRepository.GetTagIdsByPostIdAsync(post.PostId);
+
+            return MapEditor(post, categoryIds, tagIds);
+        }
+
+        public async Task<PostEditorResponse?> UpdatePostAsync(Guid currentUserId, bool isAdmin, Guid postId, UpdatePostRequest request)
+        {
+            ValidateWriteInput(request.Title, request.Content);
+
+            var post = await _postRepository.GetTrackedByPostIdAsync(postId);
+            if (post == null) return null;
+
+            if (!isAdmin && post.AuthorId != currentUserId)
+                throw new UnauthorizedAccessException("Not allowed.");
+
+            await ValidateTaxonomyAsync(request.CategoryIds, request.TagIds);
+
+            // auto-regenerate slug on title change (your decision)
+            var baseSlug = SlugGenerator.Generate(request.Title);
+            var slug = await ResolveUniqueSlugAsync(baseSlug, ignorePostId: postId);
+
+            post.Title = request.Title.Trim();
+            post.Slug = slug;
+            post.Content = request.Content;
+
+            post.ReadTimeMin = ReadTimeCalculator.ComputeMinutesFromHtml(request.Content);
+
+            post.Excerpt = string.IsNullOrWhiteSpace(request.Excerpt)
+                ? ReadTimeCalculator.BuildExcerptFromHtml(request.Content)
+                : request.Excerpt.Trim();
+
+            post.FeaturedImageUrl = request.FeaturedImageUrl;
+            post.UpdatedAt = DateTime.UtcNow;
+
+            await _postRepository.ReplaceCategoriesAsync(post.PostId, request.CategoryIds ?? new());
+            await _postRepository.ReplaceTagsAsync(post.PostId, request.TagIds ?? new());
+
+            await _postRepository.SaveChangesAsync();
+
+            var categoryIds = await _postRepository.GetCategoryIdsByPostIdAsync(post.PostId);
+            var tagIds = await _postRepository.GetTagIdsByPostIdAsync(post.PostId);
+
+            return MapEditor(post, categoryIds, tagIds);
+        }
+
+        public async Task<PostEditorResponse?> PublishPostAsync(Guid currentUserId, bool isAdmin, Guid postId)
+        {
+            var post = await _postRepository.GetTrackedByPostIdAsync(postId);
+            if (post == null) return null;
+
+            if (!isAdmin && post.AuthorId != currentUserId)
+                throw new UnauthorizedAccessException("Not allowed.");
+
+            post.Status = PostStatus.Published;
+            post.PublishedAt = DateTime.UtcNow;
+            post.UpdatedAt = DateTime.UtcNow;
+
+            await _postRepository.SaveChangesAsync();
+
+            var categoryIds = await _postRepository.GetCategoryIdsByPostIdAsync(post.PostId);
+            var tagIds = await _postRepository.GetTagIdsByPostIdAsync(post.PostId);
+
+            return MapEditor(post, categoryIds, tagIds);
+        }
+
+        public async Task<PostEditorResponse?> UnpublishPostAsync(Guid currentUserId, bool isAdmin, Guid postId)
+        {
+            var post = await _postRepository.GetTrackedByPostIdAsync(postId);
+            if (post == null) return null;
+
+            if (!isAdmin && post.AuthorId != currentUserId)
+                throw new UnauthorizedAccessException("Not allowed.");
+
+            post.Status = PostStatus.Unpublished;
+            post.PublishedAt = null; // your decision
+            post.UpdatedAt = DateTime.UtcNow;
+
+            await _postRepository.SaveChangesAsync();
+
+            var categoryIds = await _postRepository.GetCategoryIdsByPostIdAsync(post.PostId);
+            var tagIds = await _postRepository.GetTagIdsByPostIdAsync(post.PostId);
+
+            return MapEditor(post, categoryIds, tagIds);
+        }
+
+        public async Task<bool> DeletePostAsync(Guid currentUserId, bool isAdmin, Guid postId)
+        {
+            var post = await _postRepository.FindByPostIdAsync(postId);
+            if (post == null) return false;
+
+            if (!isAdmin && post.AuthorId != currentUserId)
+                throw new UnauthorizedAccessException("Not allowed.");
+
+            await _postRepository.DeleteByPostIdAsync(postId);
+            return true;
+        }
+
+        private static void ValidateWriteInput(string title, string content)
+        {
+            if (string.IsNullOrWhiteSpace(title)) throw new ArgumentException("Title is required.");
+            if (string.IsNullOrWhiteSpace(content)) throw new ArgumentException("Content is required.");
+        }
+
+        private async Task<string> ResolveUniqueSlugAsync(string baseSlug, Guid? ignorePostId)
+        {
+            if (string.IsNullOrWhiteSpace(baseSlug))
+                throw new ArgumentException("Slug could not be generated from title.");
+
+            var slug = baseSlug;
+            var i = 2;
+
+            while (await _postRepository.SlugExistsAsync(slug, ignorePostId))
+            {
+                slug = $"{baseSlug}-{i}";
+                i++;
+            }
+
+            return slug;
+        }
+
+        private async Task ValidateTaxonomyAsync(List<Guid> categoryIds, List<Guid> tagIds)
+        {
+            categoryIds ??= new();
+            tagIds ??= new();
+
+            // validate categories
+            var catTasks = categoryIds.Distinct().Select(async id => new { Id = id, Ok = await _taxonomyClient.CategoryExistsAsync(id) });
+            var cats = await Task.WhenAll(catTasks);
+            var invalidCats = cats.Where(x => !x.Ok).Select(x => x.Id).ToList();
+
+            // validate tags
+            var tagTasks = tagIds.Distinct().Select(async id => new { Id = id, Ok = await _taxonomyClient.TagExistsAsync(id) });
+            var tags = await Task.WhenAll(tagTasks);
+            var invalidTags = tags.Where(x => !x.Ok).Select(x => x.Id).ToList();
+
+            if (invalidCats.Count > 0 || invalidTags.Count > 0)
+            {
+                throw new ArgumentException($"Invalid taxonomy ids. Categories: [{string.Join(", ", invalidCats)}], Tags: [{string.Join(", ", invalidTags)}]");
+            }
+        }
+
+        private PostEditorResponse MapEditor(BlogPost post, IReadOnlyList<Guid> categoryIds, IReadOnlyList<Guid> tagIds)
+        {
+            return new PostEditorResponse
+            {
+                PostId = post.PostId,
+                AuthorId = post.AuthorId,
+                Title = post.Title,
+                Slug = post.Slug,
+                Content = post.Content,
+                Excerpt = post.Excerpt ?? string.Empty,
+                FeaturedImageUrl = post.FeaturedImageUrl,
+                Status = post.Status,
+                ReadTimeMin = post.ReadTimeMin,
+                ViewCount = post.ViewCount,
+                LikesCount = post.LikesCount,
+                CreatedAt = post.CreatedAt,
+                UpdatedAt = post.UpdatedAt,
+                PublishedAt = post.PublishedAt,
+                CategoryIds = categoryIds.ToList(),
+                TagIds = tagIds.ToList()
+            };
         }
     }
 }
