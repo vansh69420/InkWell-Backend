@@ -197,5 +197,63 @@ namespace InkWell.Post.Service.Repositories
                     .SetProperty(p => p.ViewCount, p => p.ViewCount + 1)
                     .SetProperty(p => p.UpdatedAt, DateTime.UtcNow));
         }
+
+        public async Task<BlogPost?> GetTrackedByPostIdAsync(Guid postId)
+        {
+            return await _context.Set<BlogPost>()
+                .FirstOrDefaultAsync(p => p.PostId == postId);
+        }
+
+        public async Task<bool> SlugExistsAsync(string slug, Guid? ignorePostId = null)
+        {
+            return await _context.Set<BlogPost>()
+                .AsNoTracking()
+                .AnyAsync(p => p.Slug == slug && (ignorePostId == null || p.PostId != ignorePostId));
+        }
+
+        public async Task<List<BlogPost>> FindMyPostsAsync(Guid authorId)
+        {
+            return await _context.Set<BlogPost>()
+                .AsNoTracking()
+                .Where(p => p.AuthorId == authorId)
+                .OrderByDescending(p => p.UpdatedAt ?? p.CreatedAt)
+                .ToListAsync();
+        }
+
+        public async Task ReplaceCategoriesAsync(Guid postId, IReadOnlyCollection<Guid> categoryIds)
+        {
+            var set = _context.Set<PostCategory>();
+
+            var existing = await set.Where(x => x.PostId == postId).ToListAsync();
+            set.RemoveRange(existing);
+
+            var distinct = categoryIds.Distinct().ToList();
+            if (distinct.Count > 0)
+            {
+                await set.AddRangeAsync(distinct.Select(id => new PostCategory
+                {
+                    PostId = postId,
+                    CategoryId = id
+                }));
+            }
+        }
+
+        public async Task ReplaceTagsAsync(Guid postId, IReadOnlyCollection<Guid> tagIds)
+        {
+            var set = _context.Set<PostTag>();
+
+            var existing = await set.Where(x => x.PostId == postId).ToListAsync();
+            set.RemoveRange(existing);
+
+            var distinct = tagIds.Distinct().ToList();
+            if (distinct.Count > 0)
+            {
+                await set.AddRangeAsync(distinct.Select(id => new PostTag
+                {
+                    PostId = postId,
+                    TagId = id
+                }));
+            }
+        }
     }
 }

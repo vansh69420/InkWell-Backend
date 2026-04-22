@@ -1,6 +1,9 @@
 using InkWell.Post.Service.DTOs.Responses;
 using InkWell.Post.Service.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using InkWell.Post.Service.DTOs.Requests;
+using System.Security.Claims;
 
 namespace InkWell.Post.Service.Controllers
 {
@@ -15,6 +18,7 @@ namespace InkWell.Post.Service.Controllers
             _postService = postService;
         }
 
+        [AllowAnonymous]
         [HttpGet("published")]
         public async Task<ActionResult<IReadOnlyList<PostSummaryResponse>>> GetPublishedPosts()
         {
@@ -22,6 +26,7 @@ namespace InkWell.Post.Service.Controllers
             return Ok(posts);
         }
 
+        [AllowAnonymous]
         [HttpGet("slug/{slug}")]
         public async Task<ActionResult<PostDetailResponse>> GetPostBySlug(string slug)
         {
@@ -35,6 +40,7 @@ namespace InkWell.Post.Service.Controllers
             return Ok(post);
         }
 
+        [AllowAnonymous]
         [HttpGet("search")]
         public async Task<ActionResult<IReadOnlyList<PostSummaryResponse>>> Search([FromQuery] string keyword)
         {
@@ -47,6 +53,7 @@ namespace InkWell.Post.Service.Controllers
             return Ok(posts);
         }
 
+        [AllowAnonymous]
         [HttpGet("category/{categoryId:guid}")]
         public async Task<ActionResult<IReadOnlyList<PostSummaryResponse>>> GetByCategory(Guid categoryId)
         {
@@ -54,6 +61,7 @@ namespace InkWell.Post.Service.Controllers
             return Ok(posts);
         }
 
+        [AllowAnonymous]
         [HttpGet("tag/{tagId:guid}")]
         public async Task<ActionResult<IReadOnlyList<PostSummaryResponse>>> GetByTag(Guid tagId)
         {
@@ -61,6 +69,7 @@ namespace InkWell.Post.Service.Controllers
             return Ok(posts);
         }
 
+        [AllowAnonymous]
         [HttpGet("author/{authorId:guid}")]
         public async Task<ActionResult<AuthorPostsResponse>> GetByAuthor(Guid authorId)
         {
@@ -68,6 +77,7 @@ namespace InkWell.Post.Service.Controllers
             return Ok(response);
         }
 
+        [AllowAnonymous]
         [HttpGet("count")]
         public async Task<ActionResult<PostCountResponse>> GetCount()
         {
@@ -75,6 +85,7 @@ namespace InkWell.Post.Service.Controllers
             return Ok(count);
         }
 
+        [AllowAnonymous]
         [HttpPost("{postId:guid}/view")]
         public async Task<IActionResult> RecordView(Guid postId)
         {
@@ -87,5 +98,108 @@ namespace InkWell.Post.Service.Controllers
 
             return NoContent();
         }
+
+        [Authorize(Roles = "Author,Admin")]
+        [HttpGet("me")]
+        public async Task<ActionResult<IReadOnlyList<MyPostSummaryResponse>>> GetMyPosts()
+        {
+            var userId = GetCurrentUserId();
+            var posts = await _postService.GetMyPostsAsync(userId);
+            return Ok(posts);
+        }
+
+        [Authorize(Roles = "Author,Admin")]
+        [HttpGet("{postId:guid}")]
+        public async Task<ActionResult<PostEditorResponse>> GetForEdit(Guid postId)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                var post = await _postService.GetPostForEditAsync(userId, IsAdmin(), postId);
+                return post == null ? NotFound() : Ok(post);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Forbid();
+            }
+        }
+
+        [Authorize(Roles = "Author,Admin")]
+        [HttpPost]
+        public async Task<ActionResult<PostEditorResponse>> Create([FromBody] CreatePostRequest request)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                var created = await _postService.CreatePostAsync(userId, request);
+                return Ok(created);
+            }
+            catch (ArgumentException ex) { return BadRequest(ex.Message); }
+            catch (HttpRequestException ex) { return StatusCode(503, ex.Message); }
+        }
+
+        [Authorize(Roles = "Author,Admin")]
+        [HttpPut("{postId:guid}")]
+        public async Task<ActionResult<PostEditorResponse>> Update(Guid postId, [FromBody] UpdatePostRequest request)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                var updated = await _postService.UpdatePostAsync(userId, IsAdmin(), postId, request);
+                return updated == null ? NotFound() : Ok(updated);
+            }
+            catch (UnauthorizedAccessException) { return Forbid(); }
+            catch (ArgumentException ex) { return BadRequest(ex.Message); }
+            catch (HttpRequestException ex) { return StatusCode(503, ex.Message); }
+        }
+
+        [Authorize(Roles = "Author,Admin")]
+        [HttpPut("{postId:guid}/publish")]
+        public async Task<ActionResult<PostEditorResponse>> Publish(Guid postId)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                var res = await _postService.PublishPostAsync(userId, IsAdmin(), postId);
+                return res == null ? NotFound() : Ok(res);
+            }
+            catch (UnauthorizedAccessException) { return Forbid(); }
+        }
+
+        [Authorize(Roles = "Author,Admin")]
+        [HttpPut("{postId:guid}/unpublish")]
+        public async Task<ActionResult<PostEditorResponse>> Unpublish(Guid postId)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                var res = await _postService.UnpublishPostAsync(userId, IsAdmin(), postId);
+                return res == null ? NotFound() : Ok(res);
+            }
+            catch (UnauthorizedAccessException) { return Forbid(); }
+        }
+
+        [Authorize(Roles = "Author,Admin")]
+        [HttpDelete("{postId:guid}")]
+        public async Task<IActionResult> Delete(Guid postId)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                var ok = await _postService.DeletePostAsync(userId, IsAdmin(), postId);
+                return ok ? NoContent() : NotFound();
+            }
+            catch (UnauthorizedAccessException) { return Forbid(); }
+        }
+
+        private Guid GetCurrentUserId()
+        {
+            var raw = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(raw) || !Guid.TryParse(raw, out var id))
+                throw new UnauthorizedAccessException("Invalid user id.");
+            return id;
+        }
+
+        private bool IsAdmin() => User.IsInRole("Admin");
     }
 }
