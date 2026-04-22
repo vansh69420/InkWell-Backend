@@ -1,4 +1,5 @@
 using InkWell.Post.Service.DTOs.Responses;
+using InkWell.Post.Service.DTOs.Requests;
 
 namespace InkWell.Post.Service.Services
 {
@@ -12,5 +13,16 @@ namespace InkWell.Post.Service.Services
         Task<AuthorPostsResponse> GetPostsByAuthorAsync(Guid authorId);
         Task<PostCountResponse> GetPostCountAsync();
         Task<bool> IncrementViewCountAsync(Guid postId);
+
+        Task<IReadOnlyList<MyPostSummaryResponse>> GetMyPostsAsync(Guid currentUserId);
+
+        Task<PostEditorResponse?> GetPostForEditAsync(Guid currentUserId, bool isAdmin, Guid postId);
+        Task<PostEditorResponse> CreatePostAsync(Guid currentUserId, CreatePostRequest request);
+        Task<PostEditorResponse?> UpdatePostAsync(Guid currentUserId, bool isAdmin, Guid postId, UpdatePostRequest request);
+
+        Task<PostEditorResponse?> PublishPostAsync(Guid currentUserId, bool isAdmin, Guid postId);
+        Task<PostEditorResponse?> UnpublishPostAsync(Guid currentUserId, bool isAdmin, Guid postId);
+
+        Task<bool> DeletePostAsync(Guid currentUserId, bool isAdmin, Guid postId);
     }
 }

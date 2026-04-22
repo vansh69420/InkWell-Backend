@@ -30,5 +30,12 @@ namespace InkWell.Post.Service.Repositories
         Task SaveChangesAsync();
         Task DeleteByPostIdAsync(Guid postId);
         Task IncrementViewCountAsync(Guid postId);
+        Task<BlogPost?> GetTrackedByPostIdAsync(Guid postId);
+        Task<bool> SlugExistsAsync(string slug, Guid? ignorePostId = null);
+
+        Task<List<BlogPost>> FindMyPostsAsync(Guid authorId);
+
+        Task ReplaceCategoriesAsync(Guid postId, IReadOnlyCollection<Guid> categoryIds);
+        Task ReplaceTagsAsync(Guid postId, IReadOnlyCollection<Guid> tagIds);
     }
 }
