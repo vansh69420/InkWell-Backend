@@ -46,9 +46,41 @@
       "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5160 }],
       "UpstreamPathTemplate": "/tags/{everything}",
       "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE"]
+    },
+    {
+      "DownstreamPathTemplate": "/api/comments",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5175 }],
+      "UpstreamPathTemplate": "/comments",
+      "UpstreamHttpMethod": ["GET", "POST"],
+      "DangerousAcceptAnyServerCertificateValidator": false,
+      "RouteClaimsRequirement": {},
+      "AllowedScopes": [],
+      "DownstreamHeaderTransform": {},
+      "UpstreamHeaderTransform": {},
+      "AddHeadersToRequest": {},
+      "AddClaimsToRequest": {},
+      "AddQueriesToRequest": {}
+    },
+    {
+      "DownstreamPathTemplate": "/api/comments/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5175 }],
+      "UpstreamPathTemplate": "/comments/{everything}",
+      "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE"],
+      "DangerousAcceptAnyServerCertificateValidator": false,
+      "RouteClaimsRequirement": {},
+      "AllowedScopes": [],
+      "DownstreamHeaderTransform": {},
+      "UpstreamHeaderTransform": {},
+      "AddHeadersToRequest": {},
+      "AddClaimsToRequest": {},
+      "AddQueriesToRequest": {}
     }
   ],
   "GlobalConfiguration": {
     "BaseUrl": "http://localhost:5000"
   }
+
+  
 }
