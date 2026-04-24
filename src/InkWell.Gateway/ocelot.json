@@ -76,6 +76,34 @@
       "AddHeadersToRequest": {},
       "AddClaimsToRequest": {},
       "AddQueriesToRequest": {}
+    },
+    {
+      "DownstreamPathTemplate": "/api/media/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5036 }],
+      "UpstreamPathTemplate": "/media/{everything}",
+      "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE"]
+    },
+    {
+      "DownstreamPathTemplate": "/api/media",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5036 }],
+      "UpstreamPathTemplate": "/media",
+      "UpstreamHttpMethod": ["GET", "POST"]
+    },
+    {
+      "DownstreamPathTemplate": "/api/newsletter/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5011 }],
+      "UpstreamPathTemplate": "/newsletter/{everything}",
+      "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE"]
+    },
+    {
+      "DownstreamPathTemplate": "/api/newsletter",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5011 }],
+      "UpstreamPathTemplate": "/newsletter",
+      "UpstreamHttpMethod": ["GET", "POST"]
     }
   ],
   "GlobalConfiguration": {
