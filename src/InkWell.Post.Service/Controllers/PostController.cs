@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using InkWell.Post.Service.DTOs.Requests;
 using System.Security.Claims;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace InkWell.Post.Service.Controllers
 {
@@ -30,12 +31,15 @@ namespace InkWell.Post.Service.Controllers
         [HttpGet("slug/{slug}")]
         public async Task<ActionResult<PostDetailResponse>> GetPostBySlug(string slug)
         {
-            var post = await _postService.GetPostBySlugAsync(slug);
+            Guid? currentUserId = null;
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (Guid.TryParse(userIdClaim, out var parsedId))
+                currentUserId = parsedId;
+
+            var post = await _postService.GetPostBySlugAsync(slug, currentUserId);
 
             if (post == null)
-            {
                 return NotFound();
-            }
 
             return Ok(post);
         }
@@ -194,12 +198,41 @@ namespace InkWell.Post.Service.Controllers
 
         private Guid GetCurrentUserId()
         {
-            var raw = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var raw = User.FindFirstValue(JwtRegisteredClaimNames.Sub)
+                ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrWhiteSpace(raw) || !Guid.TryParse(raw, out var id))
                 throw new UnauthorizedAccessException("Invalid user id.");
             return id;
         }
 
         private bool IsAdmin() => User.IsInRole("Admin");
+
+        [Authorize]
+        [HttpPost("{postId:guid}/like")]
+        public async Task<IActionResult> LikePost(Guid postId)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                var result = await _postService.LikePostAsync(postId, userId);
+                if (!result) return BadRequest("Already liked or post not found.");
+                return Ok();
+            }
+            catch (UnauthorizedAccessException) { return Unauthorized(); }
+        }
+
+        [Authorize]
+        [HttpPost("{postId:guid}/unlike")]
+        public async Task<IActionResult> UnlikePost(Guid postId)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                var result = await _postService.UnlikePostAsync(postId, userId);
+                if (!result) return BadRequest("Not liked or post not found.");
+                return Ok();
+            }
+            catch (UnauthorizedAccessException) { return Unauthorized(); }
+        }
     }
 }

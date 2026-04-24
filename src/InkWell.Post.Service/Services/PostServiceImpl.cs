@@ -33,7 +33,7 @@ namespace InkWell.Post.Service.Services
             return posts.Select(MapSummary).ToList();
         }
 
-        public async Task<PostDetailResponse?> GetPostBySlugAsync(string slug)
+        public async Task<PostDetailResponse?> GetPostBySlugAsync(string slug, Guid? currentUserId = null)
         {
             if (string.IsNullOrWhiteSpace(slug))
             {
@@ -50,7 +50,7 @@ namespace InkWell.Post.Service.Services
             var categoryIds = await _postRepository.GetCategoryIdsByPostIdAsync(post.PostId);
             var tagIds = await _postRepository.GetTagIdsByPostIdAsync(post.PostId);
 
-            return MapDetail(post, categoryIds, tagIds);
+            return MapDetail(post, categoryIds, tagIds, currentUserId);
         }
 
         public async Task<IReadOnlyList<PostSummaryResponse>> SearchPostsAsync(string keyword)
@@ -137,7 +137,8 @@ namespace InkWell.Post.Service.Services
         private PostDetailResponse MapDetail(
             BlogPost post,
             IReadOnlyList<Guid> categoryIds,
-            IReadOnlyList<Guid> tagIds)
+            IReadOnlyList<Guid> tagIds,
+            Guid? currentUserId = null)
         {
             return new PostDetailResponse
             {
@@ -155,7 +156,9 @@ namespace InkWell.Post.Service.Services
                 UpdatedAt = post.UpdatedAt,
                 PublishedAt = post.PublishedAt,
                 CategoryIds = categoryIds.ToList(),
-                TagIds = tagIds.ToList()
+                TagIds = tagIds.ToList(),
+                IsLikedByCurrentUser = currentUserId.HasValue &&
+                    _postRepository.GetLikeAsync(post.PostId, currentUserId.Value).Result != null
             };
         }
 
@@ -456,6 +459,42 @@ namespace InkWell.Post.Service.Services
                 CategoryIds = categoryIds.ToList(),
                 TagIds = tagIds.ToList()
             };
+        }
+
+        public async Task<bool> LikePostAsync(Guid postId, Guid userId)
+        {
+            var post = await _postRepository.GetTrackedByPostIdAsync(postId);
+            if (post == null) return false;
+
+            var existing = await _postRepository.GetLikeAsync(postId, userId);
+            if (existing != null) return false;
+
+            var like = new PostLike
+            {
+                PostLikeId = Guid.NewGuid(),
+                PostId = postId,
+                UserId = userId,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await _postRepository.AddLikeAsync(like);
+            post.LikesCount++;
+            await _postRepository.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> UnlikePostAsync(Guid postId, Guid userId)
+        {
+            var post = await _postRepository.GetTrackedByPostIdAsync(postId);
+            if (post == null) return false;
+
+            var like = await _postRepository.GetLikeAsync(postId, userId);
+            if (like == null) return false;
+
+            await _postRepository.RemoveLikeAsync(like);
+            post.LikesCount = Math.Max(0, post.LikesCount - 1);
+            await _postRepository.SaveChangesAsync();
+            return true;
         }
     }
 }

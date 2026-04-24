@@ -7,11 +7,18 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.EntityFrameworkCore;
 using InkWell.Post.Service.External;
 using System.Security.Claims;
+using System.IdentityModel.Tokens.Jwt;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Controllers & Swagger
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(
+            new System.Text.Json.Serialization.JsonStringEnumConverter()
+        );
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -81,16 +88,12 @@ builder.Services
         {
             ValidateIssuer = true,
             ValidIssuer = jwtIssuer,
-
             ValidateAudience = true,
             ValidAudience = jwtAudience,
-
             ValidateIssuerSigningKey = true,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
-
             ValidateLifetime = true,
             ClockSkew = TimeSpan.FromSeconds(30),
-
             NameClaimType = ClaimTypes.NameIdentifier,
             RoleClaimType = ClaimTypes.Role
         };
@@ -106,6 +109,17 @@ builder.Services
                     context.Token = token;
                 }
 
+                return Task.CompletedTask;
+            },
+            OnTokenValidated = context =>
+            {
+                var claims = context.Principal?.Claims.Select(c => $"{c.Type}={c.Value}");
+                Console.WriteLine($"[JWT-POST] Claims: {string.Join(", ", claims ?? [])}");
+                return Task.CompletedTask;
+            },
+            OnAuthenticationFailed = context =>
+            {
+                Console.WriteLine($"[JWT-POST] Auth failed: {context.Exception.Message}");
                 return Task.CompletedTask;
             }
         };
@@ -129,6 +143,20 @@ app.UseSession();
 
 // ✅ Auth middleware order
 app.UseAuthentication();
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path.StartsWithSegments("/api/posts/me"))
+    {
+        var user = context.User;
+        Console.WriteLine($"[AUTH-DEBUG] IsAuthenticated: {user.Identity?.IsAuthenticated}");
+        Console.WriteLine($"[AUTH-DEBUG] Claims count: {user.Claims.Count()}");
+        foreach (var claim in user.Claims)
+        {
+            Console.WriteLine($"[AUTH-DEBUG] Claim: {claim.Type} = {claim.Value}");
+        }
+    }
+    await next();
+});
 app.UseAuthorization();
 
 app.MapControllers();
