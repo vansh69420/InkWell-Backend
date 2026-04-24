@@ -17,5 +17,6 @@ namespace InkWell.Post.Service.DTOs.Responses
         public DateTime? PublishedAt { get; set; }
         public List<Guid> CategoryIds { get; set; } = new();
         public List<Guid> TagIds { get; set; } = new();
+        public bool IsLikedByCurrentUser { get; set; }
     }
 }

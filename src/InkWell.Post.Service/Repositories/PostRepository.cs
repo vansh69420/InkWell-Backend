@@ -255,5 +255,21 @@ namespace InkWell.Post.Service.Repositories
                 }));
             }
         }
+        public async Task<PostLike?> GetLikeAsync(Guid postId, Guid userId)
+        {
+            return await _context.PostLikes
+                .FirstOrDefaultAsync(l => l.PostId == postId && l.UserId == userId);
+        }
+
+        public async Task AddLikeAsync(PostLike like)
+        {
+            await _context.PostLikes.AddAsync(like);
+        }
+
+        public Task RemoveLikeAsync(PostLike like)
+        {
+            _context.PostLikes.Remove(like);
+            return Task.CompletedTask;
+        }
     }
 }

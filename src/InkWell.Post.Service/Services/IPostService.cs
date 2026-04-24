@@ -6,7 +6,6 @@ namespace InkWell.Post.Service.Services
     public interface IPostService
     {
         Task<IReadOnlyList<PostSummaryResponse>> GetPublishedPostsAsync();
-        Task<PostDetailResponse?> GetPostBySlugAsync(string slug);
         Task<IReadOnlyList<PostSummaryResponse>> SearchPostsAsync(string keyword);
         Task<IReadOnlyList<PostSummaryResponse>> GetPostsByCategoryAsync(Guid categoryId);
         Task<IReadOnlyList<PostSummaryResponse>> GetPostsByTagAsync(Guid tagId);
@@ -23,6 +22,10 @@ namespace InkWell.Post.Service.Services
         Task<PostEditorResponse?> PublishPostAsync(Guid currentUserId, bool isAdmin, Guid postId);
         Task<PostEditorResponse?> UnpublishPostAsync(Guid currentUserId, bool isAdmin, Guid postId);
 
+        Task<PostDetailResponse?> GetPostBySlugAsync(string slug, Guid? currentUserId = null);
+        Task<bool> LikePostAsync(Guid postId, Guid userId);
+        Task<bool> UnlikePostAsync(Guid postId, Guid userId);
         Task<bool> DeletePostAsync(Guid currentUserId, bool isAdmin, Guid postId);
+
     }
 }

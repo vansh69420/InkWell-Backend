@@ -37,5 +37,9 @@ namespace InkWell.Post.Service.Repositories
 
         Task ReplaceCategoriesAsync(Guid postId, IReadOnlyCollection<Guid> categoryIds);
         Task ReplaceTagsAsync(Guid postId, IReadOnlyCollection<Guid> tagIds);
+
+        Task<PostLike?> GetLikeAsync(Guid postId, Guid userId);
+        Task AddLikeAsync(PostLike like);
+        Task RemoveLikeAsync(PostLike like);
     }
 }
