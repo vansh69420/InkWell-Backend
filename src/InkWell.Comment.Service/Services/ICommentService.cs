@@ -12,4 +12,5 @@ public interface ICommentService
     Task<CommentResponse> LikeCommentAsync(Guid commentId, Guid userId);
     Task<CommentResponse> UnlikeCommentAsync(Guid commentId, Guid userId);
     Task<int> GetCommentCountAsync(Guid postId);
+    Task<int> GetTotalCommentCountAsync();
 }

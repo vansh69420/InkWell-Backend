@@ -26,4 +26,5 @@ public class PostEditorResponse
 
     public List<Guid> CategoryIds { get; set; } = new();
     public List<Guid> TagIds { get; set; } = new();
+    public bool IsFeatured { get; set; }
 }

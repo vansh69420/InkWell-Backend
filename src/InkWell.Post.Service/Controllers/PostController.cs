@@ -234,5 +234,20 @@ namespace InkWell.Post.Service.Controllers
             }
             catch (UnauthorizedAccessException) { return Unauthorized(); }
         }
+        [Authorize]
+        [HttpPut("{postId:guid}/feature")]
+        public async Task<IActionResult> FeaturePost(Guid postId)
+        {
+            var result = await _postService.FeaturePostAsync(postId);
+            return result ? Ok() : NotFound();
+        }
+
+        [Authorize]
+        [HttpPut("{postId:guid}/unfeature")]
+        public async Task<IActionResult> UnfeaturePost(Guid postId)
+        {
+            var result = await _postService.UnfeaturePostAsync(postId);
+            return result ? Ok() : NotFound();
+        }
     }
 }

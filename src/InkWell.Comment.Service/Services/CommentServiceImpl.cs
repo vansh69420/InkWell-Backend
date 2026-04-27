@@ -166,4 +166,8 @@ public class CommentServiceImpl : ICommentService
             UpdatedAt = c.UpdatedAt
         };
     }
+    public async Task<int> GetTotalCommentCountAsync()
+    {
+        return await _repo.GetTotalCountAsync();
+    }
 }
