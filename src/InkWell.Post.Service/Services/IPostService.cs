@@ -26,6 +26,8 @@ namespace InkWell.Post.Service.Services
         Task<bool> LikePostAsync(Guid postId, Guid userId);
         Task<bool> UnlikePostAsync(Guid postId, Guid userId);
         Task<bool> DeletePostAsync(Guid currentUserId, bool isAdmin, Guid postId);
+        Task<bool> FeaturePostAsync(Guid postId);
+        Task<bool> UnfeaturePostAsync(Guid postId);
 
     }
 }

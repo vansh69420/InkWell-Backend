@@ -9,6 +9,28 @@ builder.Configuration
     .AddEnvironmentVariables();
 
 builder.Services.AddOcelot(builder.Configuration);
+builder.Services.AddRouting();
+builder.Services.AddControllers();
+
+builder.Services.AddHttpClient("auth", client =>
+{
+    client.BaseAddress = new Uri("http://localhost:5077");
+});
+
+builder.Services.AddHttpClient("posts", client =>
+{
+    client.BaseAddress = new Uri("http://localhost:5103");
+});
+
+builder.Services.AddHttpClient("comments", client =>
+{
+    client.BaseAddress = new Uri("http://localhost:5175");
+});
+
+builder.Services.AddHttpClient("newsletter", client =>
+{
+    client.BaseAddress = new Uri("http://localhost:5011");
+});
 
 builder.Services.AddCors(options =>
 {
@@ -25,6 +47,13 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 
 app.UseCors("FrontendCors");
+
+app.UseRouting();
+
+app.UseEndpoints(endpoints =>
+{
+    endpoints.MapControllers();
+});
 
 await app.UseOcelot();
 

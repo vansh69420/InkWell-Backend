@@ -12,6 +12,7 @@ public class AuthDbContext : DbContext
     public DbSet<User> Users => Set<User>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<ExternalLogin> ExternalLogins => Set<ExternalLogin>();
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -78,6 +79,14 @@ public class AuthDbContext : DbContext
                 .WithMany(x => x.ExternalLogins)
                 .HasForeignKey(x => x.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<AuditLog>(e =>
+        {
+            e.HasKey(a => a.AuditLogId);
+            e.HasIndex(a => a.ActorId);
+            e.HasIndex(a => a.CreatedAt);
+            e.Property(a => a.Action).IsRequired();
+            e.Property(a => a.EntityType).IsRequired();
         });
     }
 }

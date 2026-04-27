@@ -13,4 +13,5 @@ public interface ICommentRepository
     Task<CommentLike?> GetLikeAsync(Guid commentId, Guid userId);
     Task AddLikeAsync(CommentLike like);
     Task RemoveLikeAsync(CommentLike like);
+    Task<int> GetTotalCountAsync();
 }

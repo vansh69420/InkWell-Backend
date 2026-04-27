@@ -30,7 +30,11 @@ namespace InkWell.Post.Service.Services
         public async Task<IReadOnlyList<PostSummaryResponse>> GetPublishedPostsAsync()
         {
             var posts = await _postRepository.FindPublishedOrderByPublishedAtDescAsync();
-            return posts.Select(MapSummary).ToList();
+            return posts
+                .OrderByDescending(p => p.IsFeatured)
+                .ThenByDescending(p => p.PublishedAt ?? p.CreatedAt)
+                .Select(MapSummary)
+                .ToList();
         }
 
         public async Task<PostDetailResponse?> GetPostBySlugAsync(string slug, Guid? currentUserId = null)
@@ -130,7 +134,8 @@ namespace InkWell.Post.Service.Services
                 ViewCount = post.ViewCount,
                 LikesCount = post.LikesCount,
                 CreatedAt = post.CreatedAt,
-                PublishedAt = post.PublishedAt
+                PublishedAt = post.PublishedAt,
+                IsFeatured = post.IsFeatured,
             };
         }
 
@@ -157,6 +162,7 @@ namespace InkWell.Post.Service.Services
                 PublishedAt = post.PublishedAt,
                 CategoryIds = categoryIds.ToList(),
                 TagIds = tagIds.ToList(),
+                IsFeatured = post.IsFeatured,
                 IsLikedByCurrentUser = currentUserId.HasValue &&
                     _postRepository.GetLikeAsync(post.PostId, currentUserId.Value).Result != null
             };
@@ -457,7 +463,8 @@ namespace InkWell.Post.Service.Services
                 UpdatedAt = post.UpdatedAt,
                 PublishedAt = post.PublishedAt,
                 CategoryIds = categoryIds.ToList(),
-                TagIds = tagIds.ToList()
+                TagIds = tagIds.ToList(),
+                IsFeatured = post.IsFeatured
             };
         }
 
@@ -493,6 +500,28 @@ namespace InkWell.Post.Service.Services
 
             await _postRepository.RemoveLikeAsync(like);
             post.LikesCount = Math.Max(0, post.LikesCount - 1);
+            await _postRepository.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> FeaturePostAsync(Guid postId)
+        {
+            var post = await _postRepository.GetTrackedByPostIdAsync(postId);
+            if (post == null) return false;
+
+            post.IsFeatured = true;
+            post.UpdatedAt = DateTime.UtcNow;
+            await _postRepository.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> UnfeaturePostAsync(Guid postId)
+        {
+            var post = await _postRepository.GetTrackedByPostIdAsync(postId);
+            if (post == null) return false;
+
+            post.IsFeatured = false;
+            post.UpdatedAt = DateTime.UtcNow;
             await _postRepository.SaveChangesAsync();
             return true;
         }

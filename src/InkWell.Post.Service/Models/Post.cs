@@ -48,4 +48,6 @@ public class BlogPost
 
     public ICollection<PostCategory> PostCategories { get; set; } = new List<PostCategory>();
     public ICollection<PostTag> PostTags { get; set; } = new List<PostTag>();
+
+    public bool IsFeatured { get; set; } = false;
 }

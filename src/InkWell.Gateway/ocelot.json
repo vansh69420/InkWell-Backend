@@ -104,6 +104,20 @@
       "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5011 }],
       "UpstreamPathTemplate": "/newsletter",
       "UpstreamHttpMethod": ["GET", "POST"]
+    },
+    {
+      "DownstreamPathTemplate": "/api/admin/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5077 }],
+      "UpstreamPathTemplate": "/admin/{everything}",
+      "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE"]
+    },
+    {
+      "DownstreamPathTemplate": "/api/admin",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5077 }],
+      "UpstreamPathTemplate": "/admin",
+      "UpstreamHttpMethod": ["GET", "POST"]
     }
   ],
   "GlobalConfiguration": {

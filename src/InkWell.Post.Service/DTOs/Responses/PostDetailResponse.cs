@@ -18,5 +18,6 @@ namespace InkWell.Post.Service.DTOs.Responses
         public List<Guid> CategoryIds { get; set; } = new();
         public List<Guid> TagIds { get; set; } = new();
         public bool IsLikedByCurrentUser { get; set; }
+        public bool IsFeatured { get; set; }
     }
 }

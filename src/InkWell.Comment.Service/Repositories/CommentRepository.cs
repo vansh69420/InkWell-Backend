@@ -78,4 +78,10 @@ public class CommentRepository : ICommentRepository
         _db.CommentLikes.Remove(like);
         return Task.CompletedTask;
     }
+
+    public async Task<int> GetTotalCountAsync()
+    {
+        return await _db.Set<PostComment>()
+            .CountAsync(c => c.Status != CommentStatus.Deleted);
+    }
 }

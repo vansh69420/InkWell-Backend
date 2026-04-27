@@ -143,4 +143,10 @@ public class CommentController : ControllerBase
     {
         return User.FindFirstValue(type);
     }
+    [HttpGet("count/all")]
+    public async Task<IActionResult> GetTotalCount()
+    {
+        var count = await _service.GetTotalCommentCountAsync();
+        return Ok(new { count });
+    }
 }

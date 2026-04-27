@@ -13,5 +13,6 @@ namespace InkWell.Post.Service.DTOs.Responses
         public int LikesCount { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? PublishedAt { get; set; }
+        public bool IsFeatured { get; set; }
     }
 }

@@ -37,6 +37,7 @@ public class PostDbContext : DbContext
             entity.Property(x => x.ViewCount).HasDefaultValue(0);
             entity.Property(x => x.LikesCount).HasDefaultValue(0);
             entity.Property(x => x.CreatedAt).IsRequired();
+            entity.Property(x => x.IsFeatured).HasDefaultValue(false);
 
             entity.HasMany(x => x.PostCategories)
                 .WithOne(x => x.BlogPost)
