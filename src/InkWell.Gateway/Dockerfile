@@ -14,4 +14,6 @@ RUN dotnet publish "InkWell.Gateway.csproj" -c Release -o /app/publish /p:UseApp
 FROM base AS final
 WORKDIR /app
 COPY --from=build /app/publish .
+COPY src/InkWell.Gateway/ocelot.json .
+COPY src/InkWell.Gateway/ocelot.Production.json .
 ENTRYPOINT ["dotnet", "InkWell.Gateway.dll"]

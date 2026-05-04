@@ -1,0 +1,105 @@
+{
+  "Routes": [
+    {
+      "DownstreamPathTemplate": "/api/auth/{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [{ "Host": "inkwell-auth-service.onrender.com", "Port": 443 }],
+      "UpstreamPathTemplate": "/auth/{everything}",
+      "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE"]
+    },
+    {
+      "DownstreamPathTemplate": "/api/posts/{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [{ "Host": "inkwell-post-service.onrender.com", "Port": 443 }],
+      "UpstreamPathTemplate": "/posts/{everything}",
+      "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE"]
+    },
+    {
+      "DownstreamPathTemplate": "/api/categories",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [{ "Host": "inkwell-taxonomy-service.onrender.com", "Port": 443 }],
+      "UpstreamPathTemplate": "/categories",
+      "UpstreamHttpMethod": ["GET", "POST"]
+    },
+    {
+      "DownstreamPathTemplate": "/api/categories/{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [{ "Host": "inkwell-taxonomy-service.onrender.com", "Port": 443 }],
+      "UpstreamPathTemplate": "/categories/{everything}",
+      "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE"]
+    },
+    {
+      "DownstreamPathTemplate": "/api/tags",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [{ "Host": "inkwell-taxonomy-service.onrender.com", "Port": 443 }],
+      "UpstreamPathTemplate": "/tags",
+      "UpstreamHttpMethod": ["GET", "POST"]
+    },
+    {
+      "DownstreamPathTemplate": "/api/tags/{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [{ "Host": "inkwell-taxonomy-service.onrender.com", "Port": 443 }],
+      "UpstreamPathTemplate": "/tags/{everything}",
+      "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE"]
+    },
+    {
+      "DownstreamPathTemplate": "/api/comments",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [{ "Host": "inkwell-comment-service.onrender.com", "Port": 443 }],
+      "UpstreamPathTemplate": "/comments",
+      "UpstreamHttpMethod": ["GET", "POST"]
+    },
+    {
+      "DownstreamPathTemplate": "/api/comments/{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [{ "Host": "inkwell-comment-service.onrender.com", "Port": 443 }],
+      "UpstreamPathTemplate": "/comments/{everything}",
+      "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE"]
+    },
+    {
+      "DownstreamPathTemplate": "/api/media/{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [{ "Host": "inkwell-media-service.onrender.com", "Port": 443 }],
+      "UpstreamPathTemplate": "/media/{everything}",
+      "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE"]
+    },
+    {
+      "DownstreamPathTemplate": "/api/media",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [{ "Host": "inkwell-media-service.onrender.com", "Port": 443 }],
+      "UpstreamPathTemplate": "/media",
+      "UpstreamHttpMethod": ["GET", "POST"]
+    },
+    {
+      "DownstreamPathTemplate": "/api/newsletter/{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [{ "Host": "inkwell-communication-service.onrender.com", "Port": 443 }],
+      "UpstreamPathTemplate": "/newsletter/{everything}",
+      "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE"]
+    },
+    {
+      "DownstreamPathTemplate": "/api/newsletter",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [{ "Host": "inkwell-communication-service.onrender.com", "Port": 443 }],
+      "UpstreamPathTemplate": "/newsletter",
+      "UpstreamHttpMethod": ["GET", "POST"]
+    },
+    {
+      "DownstreamPathTemplate": "/api/admin/{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [{ "Host": "inkwell-auth-service.onrender.com", "Port": 443 }],
+      "UpstreamPathTemplate": "/admin/{everything}",
+      "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE"]
+    },
+    {
+      "DownstreamPathTemplate": "/api/admin",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [{ "Host": "inkwell-auth-service.onrender.com", "Port": 443 }],
+      "UpstreamPathTemplate": "/admin",
+      "UpstreamHttpMethod": ["GET", "POST"]
+    }
+  ],
+  "GlobalConfiguration": {
+    "BaseUrl": "https://inkwell-gateway.onrender.com"
+  }
+}
