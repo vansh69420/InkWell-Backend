@@ -1,0 +1,17 @@
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
+WORKDIR /app
+EXPOSE 80
+
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+COPY ["src/InkWell.Post.Service/InkWell.Post.Service.csproj", "src/InkWell.Post.Service/"]
+RUN dotnet restore "src/InkWell.Post.Service/InkWell.Post.Service.csproj"
+COPY . .
+WORKDIR "/src/src/InkWell.Post.Service"
+RUN dotnet build "InkWell.Post.Service.csproj" -c Release -o /app/build
+RUN dotnet publish "InkWell.Post.Service.csproj" -c Release -o /app/publish /p:UseAppHost=false
+
+FROM base AS final
+WORKDIR /app
+COPY --from=build /app/publish .
+ENTRYPOINT ["dotnet", "InkWell.Post.Service.dll"]
