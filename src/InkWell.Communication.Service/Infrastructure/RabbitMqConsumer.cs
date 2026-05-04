@@ -30,12 +30,10 @@ public class RabbitMqConsumer : BackgroundService
 
         try
         {
+            var amqpUrl = _config["RabbitMq:AmqpUrl"] ?? "amqp://guest:guest@localhost:5672";
             var factory = new ConnectionFactory
             {
-                HostName = _config["RabbitMq:Host"] ?? "localhost",
-                Port = int.Parse(_config["RabbitMq:Port"] ?? "5672"),
-                UserName = _config["RabbitMq:Username"] ?? "guest",
-                Password = _config["RabbitMq:Password"] ?? "guest"
+                Uri = new Uri(amqpUrl)
             };
 
             _connection = factory.CreateConnection();

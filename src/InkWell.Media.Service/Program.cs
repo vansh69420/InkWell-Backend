@@ -31,7 +31,7 @@ builder.Services.AddDbContext<MediaDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("MediaDb")));
 
 builder.Services.AddScoped<IMediaRepository, MediaRepository>();
-builder.Services.AddScoped<IMediaService, MediaServiceImpl>();
+
 
 var jwtKey = builder.Configuration["Jwt:Key"];
 var jwtIssuer = builder.Configuration["Jwt:Issuer"];
@@ -90,7 +90,6 @@ app.UseSwaggerUI(c =>
 });
 
 app.UseCors("FrontendCors");
-app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

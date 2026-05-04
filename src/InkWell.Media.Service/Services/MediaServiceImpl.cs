@@ -1,16 +1,16 @@
+using CloudinaryDotNet;
+using CloudinaryDotNet.Actions;
 using InkWell.Media.Service.DTOs.Requests;
 using InkWell.Media.Service.DTOs.Responses;
 using InkWell.Media.Service.Models;
 using InkWell.Media.Service.Repositories;
-using Microsoft.AspNetCore.Http;
 
 namespace InkWell.Media.Service.Services;
 
 public class MediaServiceImpl : IMediaService
 {
     private readonly IMediaRepository _repo;
-    private readonly IWebHostEnvironment _env;
-    private readonly IConfiguration _config;
+    private readonly Cloudinary _cloudinary;
 
     private static readonly HashSet<string> AllowedMimeTypes = new()
     {
@@ -21,12 +21,20 @@ public class MediaServiceImpl : IMediaService
 
     public MediaServiceImpl(
         IMediaRepository repo,
-        IWebHostEnvironment env,
         IConfiguration config)
     {
         _repo = repo;
-        _env = env;
-        _config = config;
+
+        var cloudName = config["Cloudinary:CloudName"]
+            ?? throw new InvalidOperationException("Cloudinary:CloudName missing.");
+        var apiKey = config["Cloudinary:ApiKey"]
+            ?? throw new InvalidOperationException("Cloudinary:ApiKey missing.");
+        var apiSecret = config["Cloudinary:ApiSecret"]
+            ?? throw new InvalidOperationException("Cloudinary:ApiSecret missing.");
+
+        var account = new Account(cloudName, apiKey, apiSecret);
+        _cloudinary = new Cloudinary(account);
+        _cloudinary.Api.Secure = true;
     }
 
     public async Task<MediaResponse> UploadAsync(IFormFile file, Guid uploaderId)
@@ -40,20 +48,38 @@ public class MediaServiceImpl : IMediaService
         if (!AllowedMimeTypes.Contains(file.ContentType))
             throw new ArgumentException($"File type {file.ContentType} is not allowed.");
 
-        var uploadsFolder = Path.Combine(_env.WebRootPath, "uploads");
-        Directory.CreateDirectory(uploadsFolder);
+        var filename = $"{Guid.NewGuid()}";
+        string url;
+        string mimeType = file.ContentType;
 
-        var extension = Path.GetExtension(file.FileName);
-        var filename = $"{Guid.NewGuid()}{extension}";
-        var filePath = Path.Combine(uploadsFolder, filename);
-
-        using (var stream = new FileStream(filePath, FileMode.Create))
+        if (file.ContentType == "application/pdf")
         {
-            await file.CopyToAsync(stream);
+            // Upload PDF as raw file
+            var rawParams = new RawUploadParams
+            {
+                File = new FileDescription(file.FileName, file.OpenReadStream()),
+                PublicId = $"inkwell/docs/{filename}",
+                Overwrite = true
+            };
+            var rawResult = await _cloudinary.UploadAsync(rawParams);
+            if (rawResult.Error != null)
+                throw new Exception($"Cloudinary upload failed: {rawResult.Error.Message}");
+            url = rawResult.SecureUrl.ToString();
         }
-
-        var baseUrl = _config["Media:BaseUrl"] ?? "http://localhost:5036";
-        var url = $"{baseUrl}/uploads/{filename}";
+        else
+        {
+            // Upload image
+            var imageParams = new ImageUploadParams
+            {
+                File = new FileDescription(file.FileName, file.OpenReadStream()),
+                PublicId = $"inkwell/media/{filename}",
+                Overwrite = true
+            };
+            var imageResult = await _cloudinary.UploadAsync(imageParams);
+            if (imageResult.Error != null)
+                throw new Exception($"Cloudinary upload failed: {imageResult.Error.Message}");
+            url = imageResult.SecureUrl.ToString();
+        }
 
         var media = new MediaFile
         {
@@ -62,7 +88,7 @@ public class MediaServiceImpl : IMediaService
             Filename = filename,
             OriginalName = file.FileName,
             Url = url,
-            MimeType = file.ContentType,
+            MimeType = mimeType,
             SizeKb = file.Length / 1024,
             UploadedAt = DateTime.UtcNow
         };
