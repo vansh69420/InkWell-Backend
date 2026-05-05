@@ -318,8 +318,8 @@ public class AuthController : ControllerBase
         Response.Cookies.Append(name, value, new CookieOptions
         {
             HttpOnly = true,
-            Secure = false,
-            SameSite = SameSiteMode.Lax,
+            Secure = _configuration.GetValue<bool>("Cookie:Secure", false),
+            SameSite = Enum.TryParse<SameSiteMode>(_configuration["Cookie:SameSite"], true, out var sameSite) ? sameSite : SameSiteMode.Lax,
             Path = "/",
             Expires = DateTimeOffset.UtcNow.Add(expiration),
             IsEssential = true
@@ -331,20 +331,14 @@ public class AuthController : ControllerBase
         var accessExpiryMinutes = _configuration.GetValue<int?>("Jwt:ExpiryMinutes") ?? 1440;
         var refreshExpiryDays = _configuration.GetValue<int?>("Jwt:RefreshTokenExpiryDays") ?? 7;
 
-        var cookieOptions = new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = false,
-            SameSite = SameSiteMode.Lax,
-            Path = "/",
-            IsEssential = true
-        };
+        var secure = _configuration.GetValue<bool>("Cookie:Secure", false);
+        var sameSite = Enum.TryParse<SameSiteMode>(_configuration["Cookie:SameSite"], true, out var parsed) ? parsed : SameSiteMode.Lax;
 
         Response.Cookies.Append(AccessTokenCookie, result.AccessToken, new CookieOptions
         {
             HttpOnly = true,
-            Secure = false,
-            SameSite = SameSiteMode.Lax,
+            Secure = secure,
+            SameSite = sameSite,
             Path = "/",
             Expires = DateTimeOffset.UtcNow.AddMinutes(accessExpiryMinutes),
             IsEssential = true
@@ -355,8 +349,8 @@ public class AuthController : ControllerBase
             Response.Cookies.Append(RefreshTokenCookie, result.RefreshToken, new CookieOptions
             {
                 HttpOnly = true,
-                Secure = false,
-                SameSite = SameSiteMode.Lax,
+                Secure = secure,
+                SameSite = sameSite,
                 Path = "/",
                 Expires = DateTimeOffset.UtcNow.AddDays(refreshExpiryDays),
                 IsEssential = true
